@@ -178,10 +178,12 @@ class ZabbixConn(object):
         """
         random_passwd = ''.join(random.sample(string.ascii_letters + string.digits, 32))
 
-        user_defaults = {'autologin': 0, 'type': 1, 'usrgrps': [{'usrgrpid': str(groupid)}], 'passwd': random_passwd}
+        user_defaults = {'autologin': 0, 'usrgrps': [{'usrgrpid': str(groupid)}], 'passwd': random_passwd}
         user_defaults.update(user_opt)
+        print(user_defaults)
         user.update(user_defaults)
 
+        print(user)
         result = self.conn.user.create(user)
 
         return result
@@ -416,13 +418,15 @@ class ZabbixConn(object):
 
             for eachUser in set(zabbix_group_users):
                 eachUser = eachUser.lower()
-
+                ldap_user = ldap_users.get(eachUser, None)
+                if not ldap_user:
+                    continue
                 if self.ldap_media:
                     self.logger.info('>>> Updating/create user media for "%s", update "%s"' % (eachUser, self.media_description))
-                    if self.ldap_conn.get_user_media(ldap_users[eachUser], self.ldap_media):
-                        sendto = self.ldap_conn.get_user_media(ldap_users[eachUser], self.ldap_media).decode("utf8")
+                    if self.ldap_conn.get_user_media(ldap_user, self.ldap_media):
+                        sendto = self.ldap_conn.get_user_media(ldap_user, self.ldap_media).decode("utf8")
                     else:
-                        sendto = self.ldap_conn.get_user_media(ldap_users[eachUser], self.ldap_media)
+                        sendto = self.ldap_conn.get_user_media(ldap_user, self.ldap_media)
 
                     if sendto and not self.dryrun:
                         self.update_media(eachUser, self.media_description, sendto, media_opt_filtered)
