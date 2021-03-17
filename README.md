@@ -29,14 +29,15 @@ Check the official documentation of Zabbix on how to
 
 ### Setup virtualenv
 
+Debian and Ubuntu Systems:
 ```
-apt-get install python-dev virtualenv libpython3.*-dev libldap2-dev libsasl2-dev
+sudo apt-get install python-dev virtualenv libpython3.*-dev libldap2-dev libsasl2-dev
 virtualenv -p python3 venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-CentOS 8 variant:
+CentOS and Redhat Systems:
 ```
 sudo yum install python3-devel openldap-devel
 python3 -m venv venv
@@ -49,6 +50,8 @@ pip install -r requirements.txt
 In order to use the *zabbix-ldap-sync* script we need to create a configuration file describing the various LDAP and Zabbix related config entries.
 
 ### Config file sections
+
+You can use [Apache Directory Studio](https://directory.apache.org/studio/) to test the ldap connection, filters and to inspect available attributes.
 
 #### [ldap]
 * `type` - Select type of ldap server, can be `activedirectory` or `openldap`
@@ -83,7 +86,7 @@ In order to use the *zabbix-ldap-sync* script we need to create a configuration 
 #### [user]
 Allows to override various properties for Zabbix users created by script. See [User object](https://www.zabbix.com/documentation/3.2/manual/api/reference/user/object) in Zabbix API documentation for available properties. If section/property doesn't exist, defaults are:
 
- * `type = 1` - User type. Possible values: `1` - (default) Zabbix user; `2` - Zabbix admin; `3` - Zabbix super admin. 
+ * `roleid = 1` - User roleid. Possible values: `1` - (default) Zabbix user; `2` - Zabbix admin; `3` - Zabbix super admin. 
 
 #### [media]
 Allows to override media type and various properties for Zabbix media for users created by script.
@@ -95,7 +98,7 @@ You can configure additional properties in this section. See [Media object](http
 * `active = 0` - Whether the media is enabled. Possible values: `0`- enabled; `1` - disabled.
 * `period = 1-7,00:00-24:00` - Time when the notifications can be sent as a [time period](https://www.zabbix.com/documentation/3.2/manual/appendix/time_period).
 * `onlycreate = true` -  Process media only on newly created users if this is set to `true`. 
-* `severity = 63` - Decimal value of trigger severities to send notifications about. Each severity value occupies a position of a 6-bit value. Use this table to calculate decimal representation or enumerate the severities separated by a comma:
+* `severity = Disaster,High,Average,Warning` - A list of severities to send notifications about, seperated by comma (alternative: the numeric value).
 ```
 ╔═════════════╦════════╦════╦═══════╦═══════╦═══════════╦══════════════╗
 ║  Severity   ║Disaster║High║Average║Warning║Information║Not Classified║
@@ -111,50 +114,7 @@ You can configure additional properties in this section. See [Media object](http
 
 ## Configuration file example
 
-
 See [example config file](zabbix-ldap.conf.example), create a copy of this and modify it according to your needs.
-```
-[ldap]
-type = activedirectory
-uri = ldaps://ldap.example.org:389/
-base = dc=example,dc=org
-binduser = DOMAIN\ldapuser
-bindpass = ldappass
-groups = sysadmins
-media = mail
-
-[ad]
-filtergroup = (&(objectClass=group)(name=%s))
-filteruser = (objectClass=user)(objectCategory=Person)
-filterdisabled = (!(userAccountControl:1.2.840.113556.1.4.803:=2))
-filtermemberof = (memberOf:1.2.840.113556.1.4.1941:=%s)
-groupattribute = member
-userattribute = sAMAccountName
-
-[openldap]
-type = posix
-filtergroup = (&(objectClass=posixGroup)(cn=%s))
-filteruser = (&(objectClass=posixAccount)(uid=%s))
-groupattribute = memberUid
-userattribute = uid
-
-[zabbix]
-server = http://zabbix.example.org/zabbix/
-username = admin
-password = adminp4ssw0rd
-
-[user]
-type = 3
-url = http://zabbix.example.org/zabbix/hostinventories.php
-autologin = 1
-
-[media]
-description = Email
-active = 0
-period = 1-5,07:00-22:00
-severity = Disaster, High, Average, Warning, Information, Not Classified
-onlycreate = true
-```
 
 ## Command-line arguments
 
@@ -188,3 +148,23 @@ To sync different LDAP groups with different options, create separate config fil
 	$ ./zabbix-ldap-sync -f /path/to/zabbix-ldap-users.conf
 
 You would generally be running the above scripts on regular basis, say each day from `cron(8)` in order to make sure your Zabbix system is in sync with LDAP.
+
+# Open Developent Tasks
+
+This tool works for years now, but from a view of serious software development this piece of code still needs major refactorings ;-)
+Starting from the original implementation, some things have already been improved, extended and simplified.
+In my busy everyday life, I have unfortunately not yet found time for the following topics.
+
+- eliminate the need to pass around configuration values
+- eliminate the need of different configuration sections for ldap 'openldap' and 'ad'
+- introduce python typeing
+- add support for setting passwords
+- isolate configuration logic in lib/zabbixldapconf.py
+- add software tests
+- provide the possibility 
+- add possibility to deactivate users by removing the from all groups and parking the to a unprivileged group
+
+Contributions are very welcome.
+
+
+
