@@ -430,15 +430,9 @@ class ZabbixConn(object):
                 if not ldap_user:
                     continue
                 if self.ldap_media:
-<<<<<<< HEAD
-                    self.logger.info('>>> Updating/create user media for "%s", update "%s"' % (eachUser, self.media_description))
+                    self.logger.info('>>> Updating/create user media for "%s", update "%s"' % (eachUser, self.media_name))
                     if self.ldap_conn.get_user_media(ldap_user, self.ldap_media):
                         sendto = self.ldap_conn.get_user_media(ldap_user, self.ldap_media).decode("utf8")
-=======
-                    self.logger.info('>>> Updating/create user media for "%s", update "%s"' % (eachUser, self.media_name))
-                    if self.ldap_conn.get_user_media(ldap_users[eachUser], self.ldap_media):
-                        sendto = self.ldap_conn.get_user_media(ldap_users[eachUser], self.ldap_media).decode("utf8")
->>>>>>> f6beca1adf994820a7b97c2eee52ff4e867c5068
                     else:
                         sendto = self.ldap_conn.get_user_media(ldap_user, self.ldap_media)
 
